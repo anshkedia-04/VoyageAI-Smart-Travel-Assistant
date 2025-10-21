@@ -3,7 +3,8 @@ import requests
 import datetime
 import re
 
-BASE_URL = "http://localhost:8000"  # Backend endpoint
+# BASE_URL = "http://localhost:8000"  # Backend endpoint
+BASE_URL = "https://voyageai-smart-travel-assistant-1.onrender.com"
 
 # -------------------- PAGE CONFIG --------------------
 st.set_page_config(
