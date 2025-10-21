@@ -19,6 +19,11 @@ Just describe your dream trip, and VoyageAI will generate a **complete plan** in
 
 ---
 
+## 🚀 Live Demo
+Check out the live application here: [🌍 VoyageAI – Smart Travel Planner](https://voyageai-smart-travel-assistant-pkrk9xcpwhhynq4h3eylis.streamlit.app/)
+
+---
+
 ## ✨ Features  
 ✅ AI-generated, day-by-day travel itineraries  
 ✅ Real-time backend interaction via REST API  
