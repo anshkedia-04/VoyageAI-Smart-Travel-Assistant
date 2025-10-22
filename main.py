@@ -47,3 +47,7 @@ async def query_travel_agent(query:QueryRequest):
         return {"answer": final_output}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+    
+@app.get("/")
+async def root():
+    return JSONResponse(content={"message": "🚀 VoyageAI Backend is Running Successfully!"})
