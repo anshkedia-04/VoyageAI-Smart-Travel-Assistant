@@ -237,7 +237,7 @@ with st.form(key="query_form", clear_on_submit=True):
 
 if submit_button and user_input.strip():
     try:
-        with st.spinner("🧠 AI is generating your travel plan..."):
+        with st.spinner("🧠 Sit back and relax. I got it..."):
             payload = {"question": user_input}
             response = requests.post(f"{BASE_URL}/query", json=payload)
 
