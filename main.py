@@ -1,53 +1,76 @@
+from functools import lru_cache
+from typing import Literal
+import os
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from agent.agentic_workflow import GraphBuilder
-from utils.save_to_document import save_document
+from pydantic import BaseModel, ConfigDict, Field
 from starlette.responses import JSONResponse
-import os
-import datetime
-from dotenv import load_dotenv
-from pydantic import BaseModel
+
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(
+    title="VoyageAI Travel Agent API",
+    version="1.1.0",
+    description="LangGraph-powered AI travel planning backend with weather, place search, and budget tools.",
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # set specific origins in prod
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 class QueryRequest(BaseModel):
-    question: str
+    model_config = ConfigDict(protected_namespaces=())
+
+    question: str = Field(..., min_length=2, description="Travel planning prompt or destination query.")
+    model_provider: Literal["groq", "openai"] = Field(
+        default="groq",
+        description="LLM provider configured in config/config.yaml.",
+    )
+
+
+@lru_cache(maxsize=2)
+def _get_compiled_graph(model_provider: str):
+    """Lazily build and cache the LangGraph agent so server boot stays fast."""
+    from agent.agentic_workflow import GraphBuilder
+
+    graph = GraphBuilder(model_provider=model_provider)
+    return graph()
+
+
+@app.get("/")
+async def root():
+    return JSONResponse(content={"message": "VoyageAI Backend is Running Successfully!"})
+
+
+@app.get("/health")
+async def health():
+    return JSONResponse(
+        content={
+            "status": "ok",
+            "groq_configured": bool(os.getenv("GROQ_API_KEY")),
+            "openai_configured": bool(os.getenv("OPENAI_API_KEY")),
+        }
+    )
+
 
 @app.post("/query")
-async def query_travel_agent(query:QueryRequest):
+async def query_travel_agent(query: QueryRequest):
     try:
-        print(query)
-        graph = GraphBuilder(model_provider="groq")
-        react_app=graph()
-        #react_app = graph.build_graph()
+        react_app = _get_compiled_graph(query.model_provider)
+        output = react_app.invoke({"messages": [query.question]})
 
-        png_graph = react_app.get_graph().draw_mermaid_png()
-        with open("my_graph.png", "wb") as f:
-            f.write(png_graph)
-
-        print(f"Graph saved as 'my_graph.png' in {os.getcwd()}")
-        # Assuming request is a pydantic object like: {"question": "your text"}
-        messages={"messages": [query.question]}
-        output = react_app.invoke(messages)
-
-        # If result is dict with messages:
-        if isinstance(output, dict) and "messages" in output:
-            final_output = output["messages"][-1].content  # Last AI response
+        if isinstance(output, dict) and "messages" in output and output["messages"]:
+            final_output = output["messages"][-1].content
         else:
             final_output = str(output)
-        
+
         return {"answer": final_output}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
-    
-@app.get("/")
-async def root():
-    return JSONResponse(content={"message": "🚀 VoyageAI Backend is Running Successfully!"})

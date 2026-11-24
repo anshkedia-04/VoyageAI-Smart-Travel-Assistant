@@ -1,84 +1,64 @@
-# 🌍 VoyageAI – Smart Travel Planner  
+# 🧭 VoyageAI – Smart Travel Concierge
 
----
+> **Your AI-powered personal travel architect** — plan smarter, discover off-beat gems, and estimate budgets in seconds.
 
+![Python](https://img.shields.io/badge/Python-3.10%2B-0B2545?style=for-the-badge&logo=python)
+![Streamlit](https://img.shields.io/badge/Streamlit-Frontend-0F766E?style=for-the-badge&logo=streamlit)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi)
+![LangGraph](https://img.shields.io/badge/LangGraph-Agentic%20AI-D97706?style=for-the-badge)
 
-> **Your AI-powered personal travel companion** 🧭  
-> Plan smarter, travel better — with intelligent, beautifully designed itineraries.  
+## Overview
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-Frontend%2FBackend-ff4b4b?style=for-the-badge&logo=streamlit)
-![LLM](https://img.shields.io/badge/LLM-Agentic%20AI%20Planner-green?style=for-the-badge&logo=openai)
-![Travel](https://img.shields.io/badge/Travel%20Planning-Automation-orange?style=for-the-badge&logo=googlemaps)
+**VoyageAI** combines a **LangGraph ReAct multi-agent backend** (FastAPI) with a modern **Streamlit Travel Concierge UI** to craft personalized day-by-day itineraries, surface both classic highlights and off-beat spots, estimate trip expenses, and summarize local weather & transit.
 
----
+## Live Demo
 
-## 📌 Overview  
-**VoyageAI** is an intelligent **AI-powered travel planning assistant** that crafts **personalized trip itineraries** for users in seconds.  
-Just describe your dream trip, and VoyageAI will generate a **complete plan** including destinations, activities, hotels, and travel tips — all with a beautiful, glassmorphic UI built in **Streamlit**.  
+- **Streamlit Frontend**: [VoyageAI Smart Travel Concierge](https://voyageai-smart-travel-assistant-pkrk9xcpwhhynq4h3eylis.streamlit.app/)
 
----
+## Key Features
 
-## 🚀 Live Demo
-Check out the live application here: [🌍 VoyageAI – Smart Travel Planner](https://voyageai-smart-travel-assistant-pkrk9xcpwhhynq4h3eylis.streamlit.app/)
+- **Structured Trip Brief Builder**: Pick curated quick-start getaways or configure destination, duration, travelers, budget tier, currency, travel interests, and custom requests.
+- **Editorial Travel Dossier View**:
+  - Flexible Markdown itinerary parser supporting `Day 1:` / `### Day 1:` / `**Day 1**` headings and dedicated logistics sections (Hotels, Dining, Transit, Cost Breakdown, Weather).
+  - Session trip history switcher and one-click `.md` itinerary export.
+  - Cloud (`Render`) / Localhost (`:8000`) / Custom backend endpoint selector with one-click health ping.
+- **Budget & Packing Toolkit**: Interactive multi-category trip cost calculator with a Plotly spend-distribution chart and pre-departure packing checklist.
+- **Hardened FastAPI Backend**:
+  - `GET /health` endpoint for deployment healthchecks and cold-start wakeups.
+  - Cached lazy LangGraph compilation (`_get_compiled_graph`) for fast server boot.
 
----
+## Run Locally
 
-## ✨ Features  
-✅ AI-generated, day-by-day travel itineraries  
-✅ Real-time backend interaction via REST API  
-✅ Clean, modern UI with glassmorphic cards and banners  
-✅ Sidebar with contact information  
-✅ Dynamic trip insights and recommendations  
-✅ Built using **LLM-based agentic reasoning**  
+1. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. **Configure environment variables** (see `.env.name` for required keys such as `GROQ_API_KEY`, `OPENWEATHERMAP_API_KEY`, `GEOAPIFY_API_KEY`, `TAVILY_API_KEY`, `EXCHANGE_RATE_API_KEY`).
+3. **Start the FastAPI backend**:
+   ```bash
+   uvicorn main:app --reload --port 8000
+   ```
+4. **Start the Streamlit frontend**:
+   ```bash
+   streamlit run streamlit_app.py
+   ```
 
----
+### Run Tests
 
-## 🧠 How It Works  
-1. User describes their travel query (e.g. “Plan a 5-day trip to Switzerland”).  
-2. Query is sent to a **FastAPI backend** hosting the travel planning agent.  
-3. VoyageAI uses **LLMs + travel data APIs** to build a personalized plan.  
-4. Streamlit frontend displays the itinerary in styled sections and cards.  
+```bash
+python -m unittest discover -s tests -v
+```
 
----
+## Deployment
 
-## 🛠 Tech Stack  
+- **Streamlit Community Cloud**: Point main file path to `streamlit_app.py` (themed via `.streamlit/config.toml`).
+- **Render (Backend API)**: Configured via `render.yaml` (`uvicorn main:app --host 0.0.0.0 --port $PORT`).
+- **Docker**:
+  ```bash
+  docker build -t voyageai-travel .
+  docker run -p 8501:8501 voyageai-travel
+  ```
 
-| Layer | Technology | Description |
-|-------|-------------|-------------|
-| **Frontend** | Streamlit | Interactive UI for user queries and results |
-| **Backend** | FastAPI | Handles AI reasoning and query responses |
-| **Language Model** | LLM (e.g., Llama / GPT / Groq) | Generates itinerary dynamically |
-| **Styling** | Custom CSS (Glassmorphism) | Professional, modern interface |
+## Contact
 
----
-
-## 🖥️ UI Highlights  
-- 🪄 **Hero Section:** Elegant banner background with transparent overlay  
-- 💬 **AI Chat Input:** Natural language trip planner  
-- 🧊 **Glassmorphic Cards:** Display travel plans with readability and style  
-- 🎨 **Sidebar Contact:** Includes contact info & one-click email button  
-
----
-
-## 📧 Contact  
-**👨‍💻 Developed by:** [Ansh Kedia](mailto:anshkedia.04@gmail.com)  
-📞 **Phone:** +91-8758838722  
-✉️ **Email:** [anshkedia.04@gmail.com](mailto:anshkedia.04@gmail.com)  
-
----
-
-## 💡 Future Enhancements  
-🔹 Integration with live hotel & flight APIs  
-🔹 Cost estimation for each day  
-🔹 Map-based visualization  
-🔹 Trip sharing and export options  
-
----
-
-## 🖤 Acknowledgements  
-Thanks to the **Streamlit**, **FastAPI**, and **OpenAI/Groq** ecosystems for powering VoyageAI’s seamless agentic intelligence.  
-
----
-
-> *Crafted with intelligence, designed with passion — VoyageAI helps you travel smarter.* 🌍  
+- **Developer**: Ansh Kedia · [anshkedia.04@gmail.com](mailto:anshkedia.04@gmail.com)
