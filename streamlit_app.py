@@ -12,6 +12,7 @@ from ui.client import (
     DEFAULT_CLOUD_URL,
     DEFAULT_LOCAL_URL,
     check_backend_health,
+    query_direct_llm,
     query_travel_backend,
 )
 from ui.parser import (
@@ -351,27 +352,48 @@ def _render_planner_tab() -> None:
 
         with st.expander("Backend & Model Connection", expanded=False):
             endpoint_choice = st.radio(
-                "FastAPI Backend",
-                options=["Cloud API (Render)", "Localhost (:8000)", "Custom URL"],
+                "Execution Mode",
+                options=[
+                    "Cloud API (Render)",
+                    "Localhost (:8000)",
+                    "Direct API (Groq / OpenAI)",
+                    "Custom URL",
+                ],
                 index=0,
             )
-            if endpoint_choice == "Cloud API (Render)":
-                base_url = DEFAULT_CLOUD_URL
-            elif endpoint_choice == "Localhost (:8000)":
-                base_url = DEFAULT_LOCAL_URL
-            else:
-                base_url = st.text_input("Custom Backend URL", value=DEFAULT_LOCAL_URL)
-
+            direct_api_key = ""
+            base_url = DEFAULT_CLOUD_URL
             model_provider = st.selectbox("LLM Provider", options=["groq", "openai"], index=0)
 
-            if st.button("Check / Wake Backend", width="stretch"):
-                with st.spinner("Pinging VoyageAI backend..."):
-                    ok, msg = check_backend_health(base_url, timeout=15)
-                st.session_state["vy_backend_status"] = ok
-                if ok:
-                    st.success(msg)
+            if endpoint_choice == "Direct API (Groq / OpenAI)":
+                secret_name = "GROQ_API_KEY" if model_provider == "groq" else "OPENAI_API_KEY"
+                default_secret = ""
+                try:
+                    default_secret = str(st.secrets.get(secret_name, ""))
+                except Exception:
+                    default_secret = ""
+                direct_api_key = st.text_input(
+                    f"{model_provider.upper()} API Key",
+                    value=default_secret,
+                    type="password",
+                    help="Used directly from Streamlit without needing the Render backend.",
+                )
+            else:
+                if endpoint_choice == "Cloud API (Render)":
+                    base_url = DEFAULT_CLOUD_URL
+                elif endpoint_choice == "Localhost (:8000)":
+                    base_url = DEFAULT_LOCAL_URL
                 else:
-                    st.warning(msg)
+                    base_url = st.text_input("Custom Backend URL", value=DEFAULT_LOCAL_URL)
+
+                if st.button("Check / Wake Backend", width="stretch"):
+                    with st.spinner("Pinging VoyageAI backend..."):
+                        ok, msg = check_backend_health(base_url, timeout=15)
+                    st.session_state["vy_backend_status"] = ok
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.warning(msg)
 
         generate_clicked = st.button(
             "Generate Travel Plan",
@@ -394,11 +416,18 @@ def _render_planner_tab() -> None:
                 custom_notes=custom_notes,
             )
             with st.spinner("Planning itinerary, checking weather & local spots..."):
-                ok, result_text = query_travel_backend(
-                    base_url=base_url,
-                    question=prompt,
-                    model_provider=model_provider,
-                )
+                if endpoint_choice == "Direct API (Groq / OpenAI)":
+                    ok, result_text = query_direct_llm(
+                        provider=model_provider,
+                        api_key=direct_api_key,
+                        question=prompt,
+                    )
+                else:
+                    ok, result_text = query_travel_backend(
+                        base_url=base_url,
+                        question=prompt,
+                        model_provider=model_provider,
+                    )
             st.session_state["vy_backend_status"] = ok
             if ok:
                 trip_record = {

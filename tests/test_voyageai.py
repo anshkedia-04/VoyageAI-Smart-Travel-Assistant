@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 import main as backend_main
-from ui.client import check_backend_health, query_travel_backend
+from ui.client import check_backend_health, query_direct_llm, query_travel_backend
 from ui.parser import (
     compose_travel_prompt,
     estimate_trip_budget,
@@ -109,6 +109,29 @@ Weather:
             ok, ans = query_travel_backend("http://localhost:8000", "Goa 2 days")
             self.assertTrue(ok)
             self.assertIn("Beach Walk", ans)
+
+        with patch("ui.client.requests.post") as mock_post:
+            mock_post.return_value = MagicMock(
+                status_code=500,
+                text="model_not_found llama-3.3-70b-versatile",
+            )
+            ok, msg = query_travel_backend("http://localhost:8000", "Goa 2 days")
+            self.assertFalse(ok)
+            self.assertIn("Direct API", msg)
+
+    def test_direct_llm_mode_validation_and_success(self) -> None:
+        ok, msg = query_direct_llm("groq", "", "Plan Goa")
+        self.assertFalse(ok)
+        self.assertIn("API key", msg)
+
+        with patch("ui.client.requests.post") as mock_post:
+            mock_post.return_value = MagicMock(
+                status_code=200,
+                json=lambda: {"choices": [{"message": {"content": "Day 1: Old Goa"}}]},
+            )
+            ok, ans = query_direct_llm("groq", "test-key", "Plan Goa")
+            self.assertTrue(ok)
+            self.assertIn("Old Goa", ans)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 import os
 from utils.currency_converter import CurrencyConverter
 from typing import List
-from langchain.tools import tool
+from langchain_core.tools import tool
 from dotenv import load_dotenv
 
 class CurrencyConverterTool:

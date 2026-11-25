@@ -1,7 +1,7 @@
 import os
 from utils.place_info_search import GeoapifyPlaceSearchTool, TavilyPlaceSearchTool
 from typing import List
-from langchain.tools import tool
+from langchain_core.tools import tool
 from dotenv import load_dotenv
 
 class PlaceSearchTool:
