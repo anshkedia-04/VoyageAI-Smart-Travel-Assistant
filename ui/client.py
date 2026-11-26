@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import requests
 
 DEFAULT_CLOUD_URL = "https://voyageai-smart-travel-assistant-1.onrender.com"
@@ -16,9 +18,25 @@ DIRECT_SYSTEM_PROMPT = (
 )
 
 
+def get_default_backend_url() -> str:
+    """Resolve backend URL from VOYAGEAI_BACKEND_URL env var or default cloud endpoint."""
+    env_url = os.getenv("VOYAGEAI_BACKEND_URL", "").strip()
+    return env_url.rstrip("/") if env_url else DEFAULT_CLOUD_URL
+
+
+def _validate_http_url(url: str) -> str | None:
+    clean = url.strip().rstrip("/")
+    if not clean.startswith(("http://", "https://")):
+        return None
+    return clean
+
+
 def check_backend_health(base_url: str, timeout: int = 10) -> tuple[bool, str]:
     """Ping FastAPI backend /health or root endpoint without hanging."""
-    clean_url = base_url.rstrip("/")
+    clean_url = _validate_http_url(base_url)
+    if not clean_url:
+        return False, "Invalid backend URL (must start with http:// or https://)."
+
     last_error = "non-200 response"
     for path in ("/health", "/"):
         try:
@@ -38,7 +56,10 @@ def query_travel_backend(
     timeout: int = 120,
 ) -> tuple[bool, str]:
     """Send a trip planning query to the VoyageAI FastAPI backend."""
-    clean_url = base_url.rstrip("/")
+    clean_url = _validate_http_url(base_url)
+    if not clean_url:
+        return False, "Invalid backend URL (must start with http:// or https://)."
+
     payload = {"question": question, "model_provider": model_provider}
     try:
         resp = requests.post(
@@ -68,7 +89,7 @@ def query_travel_backend(
                 False,
                 "The remote Render backend is still running an outdated deprecated Groq model "
                 "(`llama-3.3-70b-versatile`). Redeploy Render from the latest `main` branch, or "
-                "switch Connection Mode to 'Direct API (Groq / OpenAI)' below.",
+                "switch Execution Mode to 'Direct API (Groq / OpenAI)' below.",
             )
         return False, f"Backend returned HTTP {resp.status_code}: {detail}"
 

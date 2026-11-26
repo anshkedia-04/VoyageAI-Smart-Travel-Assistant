@@ -2,30 +2,26 @@
 
 > **Your AI-powered personal travel architect** — plan smarter, discover off-beat gems, and estimate budgets in seconds.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-0B2545?style=for-the-badge&logo=python)
+![Python](https://img.shields.io/badge/Python-3.11%2B-0B2545?style=for-the-badge&logo=python)
 ![Streamlit](https://img.shields.io/badge/Streamlit-Frontend-0F766E?style=for-the-badge&logo=streamlit)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi)
 ![LangGraph](https://img.shields.io/badge/LangGraph-Agentic%20AI-D97706?style=for-the-badge)
 
 ## Overview
 
-**VoyageAI** combines a **LangGraph ReAct multi-agent backend** (FastAPI) with a modern **Streamlit Travel Concierge UI** to craft personalized day-by-day itineraries, surface both classic highlights and off-beat spots, estimate trip expenses, and summarize local weather & transit.
-
-## Live Demo
-
-- **Streamlit Frontend**: [VoyageAI Smart Travel Concierge](https://voyageai-smart-travel-assistant-pkrk9xcpwhhynq4h3eylis.streamlit.app/)
+**VoyageAI** combines a **LangGraph ReAct multi-agent backend** (`FastAPI`) with a modern **Streamlit Travel Concierge UI** to craft personalized day-by-day itineraries, surface both classic highlights and off-beat spots, estimate trip expenses, and summarize local weather & transit.
 
 ## Key Features
 
-- **Structured Trip Brief Builder**: Pick curated quick-start getaways or configure destination, duration, travelers, budget tier, currency, travel interests, and custom requests.
+- **Structured Trip Brief Builder**: Curated quick-start getaways plus destination, duration, travelers, budget tier, currency, travel interests, off-beat toggle, and custom notes.
 - **Editorial Travel Dossier View**:
-  - Flexible Markdown itinerary parser supporting `Day 1:` / `### Day 1:` / `**Day 1**` headings and dedicated logistics sections (Hotels, Dining, Transit, Cost Breakdown, Weather).
-  - Session trip history switcher and one-click `.md` itinerary export.
-  - Cloud (`Render`) / Localhost (`:8000`) / Custom backend endpoint selector with one-click health ping.
+  - Safe, flexible Markdown itinerary parser supporting varied `Day N` headings and logistics sections (`Hotels`, `Restaurants`, `Transportation`, `Cost Breakdown`, `Per Day Expense Budget`, `Weather`).
+  - Session trip history switcher and one-click `.md` itinerary download.
+  - Configurable execution modes: configured/cloud FastAPI backend, `localhost:8000`, custom URL, or standalone **Direct API (Groq / OpenAI)** mode.
 - **Budget & Packing Toolkit**: Interactive multi-category trip cost calculator with a Plotly spend-distribution chart and pre-departure packing checklist.
-- **Hardened FastAPI Backend**:
-  - `GET /health` endpoint for deployment healthchecks and cold-start wakeups.
-  - Cached lazy LangGraph compilation (`_get_compiled_graph`) for fast server boot.
+- **Production-Hardened Backend & Tooling**:
+  - Request ID & latency logging middleware, `GET /health` provider/tool readiness report, `recursion_limit` guard, and `503` diagnostic handling for missing credentials.
+  - Timeouts, metric units, and graceful fallbacks across Weather, Geoapify/Tavily Place Search, and Currency tools.
 
 ## Run Locally
 
@@ -33,7 +29,8 @@
    ```bash
    pip install -r requirements.txt
    ```
-2. **Configure environment variables** (see `.env.name` for required keys such as `GROQ_API_KEY`, `OPENWEATHERMAP_API_KEY`, `GEOAPIFY_API_KEY`, `TAVILY_API_KEY`, `EXCHANGE_RATE_API_KEY`).
+2. **Configure environment variables**:
+   Copy `.env.example` to `.env` and add at least `GROQ_API_KEY` or `OPENAI_API_KEY` (plus optional `OPENWEATHERMAP_API_KEY`, `GEOAPIFY_API_KEY`, `TAVILY_API_KEY`, `EXCHANGE_RATE_API_KEY`).
 3. **Start the FastAPI backend**:
    ```bash
    uvicorn main:app --reload --port 8000
@@ -51,13 +48,14 @@ python -m unittest discover -s tests -v
 
 ## Deployment
 
-- **Streamlit Community Cloud**: Point main file path to `streamlit_app.py` (themed via `.streamlit/config.toml`).
-- **Render (Backend API)**: Configured via `render.yaml` (`uvicorn main:app --host 0.0.0.0 --port $PORT`).
-- **Docker**:
+- **Full Stack with Docker Compose**:
   ```bash
-  docker build -t voyageai-travel .
-  docker run -p 8501:8501 voyageai-travel
+  cp .env.example .env
+  docker compose up --build
   ```
+  Starts `backend` (`http://localhost:8000`) with `/health` check and `frontend` (`http://localhost:8501`) automatically wired via `VOYAGEAI_BACKEND_URL=http://backend:8000`.
+- **Render (Backend API)**: Configured via `render.yaml` (`healthCheckPath: /health`, `uvicorn main:app --host 0.0.0.0 --port $PORT`).
+- **Streamlit Community Cloud (Frontend)**: Point main file path to `streamlit_app.py` (supports `Direct API` via `st.secrets` or a connected `VOYAGEAI_BACKEND_URL`).
 
 ## Contact
 

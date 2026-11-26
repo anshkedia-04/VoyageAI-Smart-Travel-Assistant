@@ -12,6 +12,7 @@ from ui.client import (
     DEFAULT_CLOUD_URL,
     DEFAULT_LOCAL_URL,
     check_backend_health,
+    get_default_backend_url,
     query_direct_llm,
     query_travel_backend,
 )
@@ -134,7 +135,6 @@ def _init_session_state() -> None:
         "vy_interests": ["Beaches & Relaxation", "Food & Local Cafés", "Off-Beat Gems"],
         "vy_history": [],
         "vy_active_trip_idx": None,
-        "vy_show_sample": True,
         "vy_backend_status": None,
     }
     for key, val in defaults.items():
@@ -351,10 +351,23 @@ def _render_planner_tab() -> None:
         )
 
         with st.expander("Backend & Model Connection", expanded=False):
+            configured_backend = get_default_backend_url()
+            try:
+                secret_url = str(st.secrets.get("VOYAGEAI_BACKEND_URL", "")).strip()
+                if secret_url:
+                    configured_backend = secret_url.rstrip("/")
+            except Exception:
+                pass
+
+            primary_label = (
+                "Configured Backend"
+                if configured_backend != DEFAULT_CLOUD_URL
+                else "Cloud API (Render)"
+            )
             endpoint_choice = st.radio(
                 "Execution Mode",
                 options=[
-                    "Cloud API (Render)",
+                    primary_label,
                     "Localhost (:8000)",
                     "Direct API (Groq / OpenAI)",
                     "Custom URL",
@@ -362,7 +375,7 @@ def _render_planner_tab() -> None:
                 index=0,
             )
             direct_api_key = ""
-            base_url = DEFAULT_CLOUD_URL
+            base_url = configured_backend
             model_provider = st.selectbox("LLM Provider", options=["groq", "openai"], index=0)
 
             if endpoint_choice == "Direct API (Groq / OpenAI)":
@@ -379,8 +392,8 @@ def _render_planner_tab() -> None:
                     help="Used directly from Streamlit without needing the Render backend.",
                 )
             else:
-                if endpoint_choice == "Cloud API (Render)":
-                    base_url = DEFAULT_CLOUD_URL
+                if endpoint_choice == primary_label:
+                    base_url = configured_backend
                 elif endpoint_choice == "Localhost (:8000)":
                     base_url = DEFAULT_LOCAL_URL
                 else:
@@ -441,7 +454,6 @@ def _render_planner_tab() -> None:
                 }
                 st.session_state["vy_history"].insert(0, trip_record)
                 st.session_state["vy_active_trip_idx"] = 0
-                st.session_state["vy_show_sample"] = False
             else:
                 st.error(result_text)
 

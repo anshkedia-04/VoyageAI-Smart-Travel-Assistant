@@ -1,16 +1,23 @@
 import os
-from typing import Literal, Optional, Any
-from pydantic import BaseModel, Field
-from utils.config_loader import load_config
+from typing import Literal, Optional
+
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, ConfigDict, Field
+
+from exception.exceptionhandling import ConfigurationError
+from logger.logging import get_logger
+from utils.config_loader import load_config
+
+logger = get_logger(__name__)
 
 
 class ConfigLoader:
     """Loads the configuration for the project."""
+
     def __init__(self):
-        print("Loaded config...")
         self.config = load_config()
+        logger.debug("Loaded LLM configuration from config.yaml")
 
     def __getitem__(self, key):
         return self.config[key]
@@ -18,11 +25,11 @@ class ConfigLoader:
 
 class ModelLoader(BaseModel):
     """Handles loading of LLM models from different providers."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     model_provider: Literal["groq", "openai"] = "groq"
     config: Optional[ConfigLoader] = Field(default=None, exclude=True)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -30,32 +37,21 @@ class ModelLoader(BaseModel):
             self.config = ConfigLoader()
 
     def load_llm(self):
-        """Load and return the LLM model based on the provider."""
-        print("LLM loading...")
-        print(f"Loading model from provider: {self.model_provider}")
-
+        """Load and return the LLM model based on the configured provider."""
         if self.model_provider == "groq":
-            print("Loading LLM from Groq...")
             groq_api_key = os.getenv("GROQ_API_KEY")
             if not groq_api_key:
-                raise ValueError("GROQ_API_KEY not found in environment variables!")
-
-            # Make sure your config has the updated supported model
+                raise ConfigurationError("GROQ_API_KEY not found in environment variables.")
             model_name = self.config["llm"]["groq"]["model_name"]
-            llm = ChatGroq(model=model_name, api_key=groq_api_key)
+            logger.info("Initializing Groq model: %s", model_name)
+            return ChatGroq(model=model_name, api_key=groq_api_key)
 
-        elif self.model_provider == "openai":
-            print("Loading LLM from OpenAI...")
+        if self.model_provider == "openai":
             openai_api_key = os.getenv("OPENAI_API_KEY")
             if not openai_api_key:
-                raise ValueError("OPENAI_API_KEY not found in environment variables!")
-
-            # Use model name from config
+                raise ConfigurationError("OPENAI_API_KEY not found in environment variables.")
             model_name = self.config["llm"]["openai"]["model_name"]
-            llm = ChatOpenAI(model_name=model_name, api_key=openai_api_key)
+            logger.info("Initializing OpenAI model: %s", model_name)
+            return ChatOpenAI(model_name=model_name, api_key=openai_api_key)
 
-        else:
-            raise ValueError(f"Unsupported model provider: {self.model_provider}")
-
-        print(f"Loaded model: {llm}")
-        return llm
+        raise ConfigurationError(f"Unsupported model provider: {self.model_provider}")
